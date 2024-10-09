@@ -32,6 +32,7 @@ Changes in CUPS v2.5b1 (TBA)
 - Added a systemd slice to the systemd services included with the scheduler
 - Added localizations for deprecated IPP attributes/options (Issue #1020)
 - Added support for specifying permissions with the `cupsFileOpen` API.
+- Updated documents (Issue #984)
 - Updated CUPS to require TLS support - OpenSSL, GNUTLS and LibreSSL are
   supported.
 - Updated CUPS to require ZLIB.
@@ -112,6 +113,7 @@ Changes in CUPS v2.5b1 (TBA)
   extension.
 - Fixed error handling when reading a mixed `1setOf` attribute.
 - Fixed how `ippeveprinter` responds to an unsupported request character set.
+- Fixed a recursion issue in `ippReadIO`.
 - Removed hash support for SHA2-512-224 and SHA2-512-256.
 - Removed `mantohtml` script for generating html pages (use
   `https://www.msweet.org/mantohtml/`)
