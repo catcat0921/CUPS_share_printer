@@ -54,7 +54,7 @@ static cups_array_t	*tls_root_certs = NULL;
 // Local functions...
 //
 
-static bool		http_check_roots(const char *creds);
+static char		*http_check_roots(const char *creds);
 static char		*http_copy_file(const char *path, const char *common_name, const char *ext);
 static const char	*http_default_path(char *buffer, size_t bufsize);
 static bool		http_default_san_cb(const char *common_name, const char *subject_alt_name, void *data);
@@ -300,13 +300,11 @@ _httpTLSSetOptions(int options,		// I - Options
 // 'http_check_roots()' - Check whether the supplied credentials use a trusted root CA.
 //
 
-static bool				// O - `true` if they use a trusted root, `false` otherwise
+static char *				// O - Trusted root certificate chain or `NULL` otherwise
 http_check_roots(const char *creds)	// I - Credentials
 {
-  bool		ret = false;		// Return value
+  char	*ret = NULL;			// Return value
 
-
-  DEBUG_printf("3http_check_roots(creds=\"%s\")", creds);
 
 #ifdef __APPLE__
   // Apple hides all of the keychain stuff (all deprecated) so the best we can
@@ -369,19 +367,13 @@ http_check_roots(const char *creds)	// I - Credentials
   // Test the certificate list against the macOS/iOS trust store...
   if ((policy = SecPolicyCreateBasicX509()) != NULL)
   {
-    DEBUG_puts("4http_check_roots: SecPolicyCreateBasicX509 succeeded.");
-
     if (SecTrustCreateWithCertificates(certs, policy, &trust) == noErr)
     {
-      ret = SecTrustEvaluateWithError(trust, NULL);
-      CFRelease(trust);
+      if (SecTrustEvaluateWithError(trust, NULL))
+        ret = strdup("");
 
-      DEBUG_printf("4http_check_roots: SecTrustEvaluateWithError returned %d.", ret);
+      CFRelease(trust);
     }
-#ifdef DEBUG
-    else
-      DEBUG_printf("4http_check_roots: SecTrustCreateWithCertificates returned %d.", SecTrustCreateWithCertificates(certs, policy, &trust));
-#endif // DEBUG
 
     CFRelease(policy);
   }
@@ -490,8 +482,8 @@ http_check_roots(const char *creds)	// I - Credentials
     // Compare the root against the tail of the current credentials...
     rcredslen = strlen(rcreds);
 
-    if (credslen >= rcredslen && !strcmp(creds + (credslen - rcredslen), rcreds))
-      ret = true;
+    if (credslen > rcredslen && !strcmp(creds + (credslen - rcredslen), rcreds))
+      ret = strdup(rcreds);
   }
 
   // Unlock access and return...
